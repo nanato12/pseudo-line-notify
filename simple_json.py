@@ -7,13 +7,12 @@ from os.path import exists
 from typing import Optional, Tuple
 
 from dotenv import load_dotenv
+from flask import Flask, Response, jsonify, request
 from line_works.client import LineWorks
 from line_works.mqtt.enums.packet_type import PacketType
 from line_works.mqtt.models.packet import MQTTPacket
 from line_works.mqtt.models.payload.message import MessagePayload
 from line_works.tracer import LineWorksTracer
-
-from flask import Flask, jsonify, request
 
 JSON_FILE = "notify.json"
 
@@ -103,11 +102,13 @@ def receive_publish_packet(w: LineWorks, p: MQTTPacket) -> None:
 
     elif payload.loc_args1.startswith("/find:"):
         notify_token = payload.loc_args1.split(":")[1].strip()
-        channel_no = settings.find_channel_no_by_notify_token(notify_token)
-        if channel_no:
+        target_channel_no = settings.find_channel_no_by_notify_token(
+            notify_token
+        )
+        if target_channel_no:
             w.send_text_message(
                 payload.channel_no,
-                f"Channel no: {channel_no}",
+                f"Channel no: {target_channel_no}",
             )
         else:
             w.send_text_message(
@@ -127,7 +128,7 @@ app = Flask(__name__)
 
 
 @app.route("/notify", methods=["POST"])
-def notify():
+def notify() -> Response:
     token = request.json.get("token", "")
 
     channel_no = settings.find_channel_no_by_notify_token(token)
@@ -142,7 +143,7 @@ def notify():
     return jsonify({"success": True, "message": "Notification sent"}), 200
 
 
-def run_flask():
+def run_flask() -> None:
     app.run(host="0.0.0.0", port=3333)
 
 
