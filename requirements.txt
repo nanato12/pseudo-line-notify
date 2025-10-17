@@ -1,2 +1,2 @@
 Flask==3.1.2
-line-works-sdk==3.7
+line-works-sdk==3.8
